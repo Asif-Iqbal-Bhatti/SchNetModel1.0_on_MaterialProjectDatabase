@@ -94,9 +94,9 @@ with connect(outdbpathF) as conDB:
 						k2 = x['Ehull']
 			#print(p, k2)
 			
-			#=====================================================	
-			#                        MAIN
-			#=====================================================
+		#=====================================================	
+		#                        MAIN
+		#=====================================================
 			
 			for dl in reversed(dLDATA):
 				arg_path  = os.path.join(inp_Argo, p, dl)
@@ -117,8 +117,8 @@ with connect(outdbpathF) as conDB:
 					
 				for u, at in enumerate(read_xmlF, start = 1):
 					if oo <=  key_list[0]:
-						conDB.write(at, IonStep=u, EPerAtom=vv[u-1], EHull=k2-vvdiff[u-1],
-						data={WS:wf1, dir:p, subdir:dl, IonStep: u, EPerAtom:vv[u-1], CEPerAtom:vv[u-1], EHull:k2-vvdiff[u-1] })			
+						conDB.write(at, IonStep=kk[u-1], EPerAtom=vv[u-1], EHull=k2-vvdiff[u-1],
+						data={WS:wf1, dir:p, subdir:dl, IonStep:kk[u-1], EPerAtom:vv[u-1], CEPerAtom:vv[u-1], EHull:k2-vvdiff[u-1] })			
 						
 						dif1 = k2-vvdiff[u-1]
 						outFile2.write("{}, {}, {}, {}, {}, {}, {}\n". \
@@ -129,8 +129,8 @@ with connect(outdbpathF) as conDB:
 						dif2 = [i-asd[0] for i in asd] 
 						dif3 = dif1-dif2[u-1]
 						
-						conDB.write(at, IonStep=u, EPerAtom=vv[u-1], EHull=dif1-dif2[u-1] , 
-						data={WS:wf1, dir:p, subdir:dl, IonStep: u, EPerAtom:vv[u-1], CEPerAtom:vv[u-1]+val_list[0][0], EHull:dif1-dif2[u-1] })
+						conDB.write(at, IonStep=kk[u-1], EPerAtom=vv[u-1], EHull=dif1-dif2[u-1] , 
+						data={WS:wf1, dir:p, subdir:dl, IonStep:kk[u-1], EPerAtom:vv[u-1], CEPerAtom:vv[u-1]+val_list[0][0], EHull:dif1-dif2[u-1] })
 						
 						outFile2.write("{}, {}, {}, {}, {}, {}, {}\n". \
 						format(wf1, p, dl, kk[u-1], vv[u-1], vv[u-1]+val_list[0][0], dif1-dif2[u-1]    ))
@@ -142,8 +142,8 @@ with connect(outdbpathF) as conDB:
 				for u, at in enumerate(read_xmlF, start = 1):
 					if oo > key_list[1]:	
 					
-						conDB.write(at, IonStep=u, EPerAtom=vv[u-1], EHull=dif3-dif4[u-1],
-						data={WS:wf1, dir:p, subdir:dl, IonStep: u, EPerAtom:vv[u-1], CEPerAtom:vv[u-1]-dife[0], EHull:dif3-dif4[u-1]  })
+						conDB.write(at, IonStep=kk[u-1], EPerAtom=vv[u-1], EHull=dif3-dif4[u-1],
+						data={WS:wf1, dir:p, subdir:dl, IonStep:kk[u-1], EPerAtom:vv[u-1], CEPerAtom:vv[u-1]-dife[0], EHull:dif3-dif4[u-1]  })
 						
 						outFile2.write("{}, {}, {}, {}, {}, {}, {}\n". \
 						format(wf1, p, dl, kk[u-1], vv[u-1], vv[u-1]-dife[0], dif3-dif4[u-1]     ))		
