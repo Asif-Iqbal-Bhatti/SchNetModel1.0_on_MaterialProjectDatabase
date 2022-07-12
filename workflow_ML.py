@@ -25,7 +25,7 @@ outdbpathF = os.path.join(cwd, 'EHCorrForces2M.db')
 outFile2 = open('EHCorr.csv', 'w')
 
 #============= DEFINE PROPERTIES
-EformPerAtom = "formation_energy_per_atom"
+EformPerAtom = "FormationEnergy/atom"
 EPerAtom     = "TotalEnergy/atom"
 CEPerAtom    = "CorrTotalEnergy/atom"
 EHull        = "Ehull"
@@ -34,25 +34,25 @@ Umax         = "Umax"
 EHullDiff    = "EhullDiff"
 IonStep      = "IonicStep"
 WS           = "WorkflowStep"
-dir          = "Dir"
-subdir       = "SubDir"
+Dir          = "Dir"
+Subdir       = "Subdir"
 
 #============= INITIALIZATION
 data_cnt = 0; wf1 = 1
-inp_Argo = 'Arg_2_metal'
+inp_Argo = 'DDDD'
 initial_path = os.getcwd()
 abs_path = os.path.abspath(os.path.join(initial_path, inp_Argo))
-argo_dir = next(os.walk(abs_path))[1]
-print('2M_ARG:: ', str(len(argo_dir)))
+argo_Dir = next(os.walk(abs_path))[1]
+print('2M_ARG:: ', str(len(argo_Dir)))
 
 #============= EVOLUTION OF WORKFLOW
 dLDATA = ['A', 'B', 'C']
 
 outFile2.write("{},{},{},{},{},{},{}\n".format("WorkflowStep", "Dir", \
-	"SubDir", "IonicStep", "TotalEnergy/atom", "CorrTotalEnergy/atom", "ehull"))
+	"Subdir", "IonicStep", "TotalEnergy/atom", "CorrTotalEnergy/atom", "ehull"))
 
 with connect(outdbpathF) as conDB:
-	for p in tqdm(argo_dir):
+	for p in tqdm(argo_Dir):
 		try:
 			nn = []; ee = []; ff = {}; ll = {}
 			oo = 1; asd = []; dife = []; dif4 = []
@@ -94,9 +94,9 @@ with connect(outdbpathF) as conDB:
 						k2 = x['Ehull']
 			#print(p, k2)
 			
-		#=====================================================	
-		#                        MAIN
-		#=====================================================
+			#=====================================================	
+			#                        MAIN
+			#=====================================================
 			
 			for dl in reversed(dLDATA):
 				arg_path  = os.path.join(inp_Argo, p, dl)
@@ -117,23 +117,23 @@ with connect(outdbpathF) as conDB:
 					
 				for u, at in enumerate(read_xmlF, start = 1):
 					if oo <=  key_list[0]:
-						conDB.write(at, IonStep=kk[u-1], EPerAtom=vv[u-1], EHull=k2-vvdiff[u-1],
-						data={WS:wf1, dir:p, subdir:dl, IonStep:kk[u-1], EPerAtom:vv[u-1], CEPerAtom:vv[u-1], EHull:k2-vvdiff[u-1] })			
+						conDB.write(at, IonStep=kk[u-1], EPerAtom=vv[u-1], Ehull=k2+vvdiff[u-1],
+						data={WS:wf1, Dir:p, Subdir:dl, IonStep:kk[u-1], EPerAtom:vv[u-1], CEPerAtom:vv[u-1], EHull:k2+vvdiff[u-1] })			
 						
-						dif1 = k2-vvdiff[u-1]
+						dif1 = k2+vvdiff[u-1]
 						outFile2.write("{}, {}, {}, {}, {}, {}, {}\n". \
-						format(wf1, p, dl, kk[u-1], vv[u-1], vv[u-1], k2-vvdiff[u-1]  ))
+						format(wf1, p, dl, kk[u-1], vv[u-1], vv[u-1], k2+vvdiff[u-1]  ))
 					
 					if oo > key_list[0] and oo <= key_list[1]:
 						asd.append(vv[u-1]+val_list[0][0])
 						dif2 = [i-asd[0] for i in asd] 
-						dif3 = dif1-dif2[u-1]
+						dif3 = dif1+dif2[u-1]
 						
-						conDB.write(at, IonStep=kk[u-1], EPerAtom=vv[u-1], EHull=dif1-dif2[u-1] , 
-						data={WS:wf1, dir:p, subdir:dl, IonStep:kk[u-1], EPerAtom:vv[u-1], CEPerAtom:vv[u-1]+val_list[0][0], EHull:dif1-dif2[u-1] })
+						conDB.write(at, IonStep=kk[u-1], EPerAtom=vv[u-1], Ehull=dif1+dif2[u-1] , 
+						data={WS:wf1, Dir:p, Subdir:dl, IonStep:kk[u-1], EPerAtom:vv[u-1], CEPerAtom:vv[u-1]+val_list[0][0], EHull:dif1+dif2[u-1] })
 						
 						outFile2.write("{}, {}, {}, {}, {}, {}, {}\n". \
-						format(wf1, p, dl, kk[u-1], vv[u-1], vv[u-1]+val_list[0][0], dif1-dif2[u-1]    ))
+						format(wf1, p, dl, kk[u-1], vv[u-1], vv[u-1]+val_list[0][0], dif1+dif2[u-1]    ))
 				
 					if oo > key_list[1]:
 						dife.append( vv[u-1]-asd[-1] )
@@ -142,11 +142,11 @@ with connect(outdbpathF) as conDB:
 				for u, at in enumerate(read_xmlF, start = 1):
 					if oo > key_list[1]:	
 					
-						conDB.write(at, IonStep=kk[u-1], EPerAtom=vv[u-1], EHull=dif3-dif4[u-1],
-						data={WS:wf1, dir:p, subdir:dl, IonStep:kk[u-1], EPerAtom:vv[u-1], CEPerAtom:vv[u-1]-dife[0], EHull:dif3-dif4[u-1]  })
+						conDB.write(at, IonStep=kk[u-1], EPerAtom=vv[u-1], Ehull=dif3+dif4[u-1],
+						data={WS:wf1, Dir:p, Subdir:dl, IonStep:kk[u-1], EPerAtom:vv[u-1], CEPerAtom:vv[u-1]-dife[0], EHull:dif3+dif4[u-1]  })
 						
 						outFile2.write("{}, {}, {}, {}, {}, {}, {}\n". \
-						format(wf1, p, dl, kk[u-1], vv[u-1], vv[u-1]-dife[0], dif3-dif4[u-1]     ))		
+						format(wf1, p, dl, kk[u-1], vv[u-1], vv[u-1]-dife[0], dif3+dif4[u-1]     ))		
 						
 					data_cnt +=1
 					oo +=1
