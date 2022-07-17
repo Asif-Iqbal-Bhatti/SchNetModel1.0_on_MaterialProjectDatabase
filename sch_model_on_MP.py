@@ -33,9 +33,8 @@ for p in matprojdata.available_properties: print('-', p)
 
 # loss function
 def mse_loss(batch, result):
-    diff = batch['formation_energy_per_atom']-result['formation_energy_per_atom']
-    err_sq = torch.mean(diff ** 2)
-    return err_sq
+	diff = batch['formation_energy_per_atom']-result['formation_energy_per_atom']
+	return torch.mean(diff ** 2)
 		
 train, val, test = spk.train_test_split(
 		data=matprojdata,
@@ -43,7 +42,7 @@ train, val, test = spk.train_test_split(
 		num_val=40000,
 		split_file=os.path.join(outData, "split.npz"),
 		)
-		
+
 train_loader = spk.AtomsLoader(train, batch_size=100, shuffle=True)
 val_loader = spk.AtomsLoader(val, batch_size=100)			
 
@@ -89,7 +88,7 @@ trainer = trn.Trainer(
 )
 
 device = "cpu" # change to 'cpu' if gpu is not available
-n_epochs = 200 
+n_epochs = 200
 trainer.train(device=device, n_epochs=n_epochs)
 
 #==== PLOTING A FUNCTION 
@@ -125,17 +124,17 @@ test_loader = spk.AtomsLoader(test, batch_size=100)
 err = 0
 print(len(test_loader))
 for count, batch in enumerate(test_loader):
-    batch = {k: v.to(device) for k, v in batch.items()}
-    # apply model
-    pred = best_model(batch)
-    # calculate absolute error
-    tmp = torch.sum(torch.abs(pred['formation_energy_per_atom']-batch['formation_energy_per_atom']))
-    tmp = tmp.detach().cpu().numpy() # detach from graph & convert to numpy
-    err += tmp
+	batch = {k: v.to(device) for k, v in batch.items()}
+	# apply model
+	pred = best_model(batch)
+	# calculate absolute error
+	tmp = torch.sum(torch.abs(pred['formation_energy_per_atom']-batch['formation_energy_per_atom']))
+	tmp = tmp.detach().cpu().numpy() # detach from graph & convert to numpy
+	err += tmp
 
-    # log progress
-    percent = '{:3.2f}'.format(count/len(test_loader)*100)
-    print('Progress:', percent+'%'+' '*(5-len(percent)), end="\r")
+	# log progress
+	percent = '{:3.2f}'.format(count/len(test_loader)*100)
+	print('Progress:', f'{percent}%' + ' '*(5-len(percent)), end="\r")
 
 err /= len(test)
 print('Test MAE', np.round(err, 2), 'eV =',
