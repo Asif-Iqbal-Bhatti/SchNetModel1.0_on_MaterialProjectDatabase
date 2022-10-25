@@ -1,2 +1,4 @@
-# SchNetPackModel_on_MaterialProjectDatabase
-SchNetPack Model on Material Project Database
+# Training SchNet Model on  MaterialProjectDatabase
+
+ATAT MAPS fitting cluster expansion to predict phase diagram and thermodynamics properties
+
