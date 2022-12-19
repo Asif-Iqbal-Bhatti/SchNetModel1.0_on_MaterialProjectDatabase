@@ -3,48 +3,54 @@
 '''
 #========================================================
 # AUTHOR:: AsifIqbal -> @AIB_EM
-# USAGE :: Training a material project database
-#       :: schnetpack download from conda
+# USAGE :: Training on a material project database
+#       :: schnetpack downloaded from conda
 #========================================================
 '''
 
 import os, sys, numpy as np, matplotlib.pyplot as plt
 import schnetpack as spk
 import schnetpack.train as trn
-from ase.units import kcal, mol
 import torch, torchmetrics
-from torch.optim import Adam
 import pytorch_lightning as pl
+from ase.units import kcal, mol
+from torch.optim import Adam
 from schnetpack.datasets.matproj import MaterialsProject
 
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
-device = "gpu" # change to 'cpu' if gpu is not available
+os.environ['OPENBLAS_NUM_THREADS'] = '2'
+if torch.cuda.is_available():
+    device = "cuda"
+else:
+    device = "cpu"
 properMP = 'formation_energy_per_atom'
-outData = './mpModelData'
+outData = 'mpModelData'
 if not os.path.exists('outData'):   
     os.makedirs(outData, exist_ok=True)
 
 #============ INITIALIZATION
 def data_loading():
-    key="***********"
-    matprojdata = MaterialsProject('./matprojAI.db', apikey=key, download=False,)
-    print('Total calculations:', len(matprojdata))
+    key="***************"
+    matprojdata = MaterialsProject('matprojAI.db', apikey=key, download=False,)
+    print(f'Total calculations: {len(matprojdata)}')
     print('Available properties:')
     for p in matprojdata.available_properties: 
-        print('->', p)
+        print(f'    -> {p:15s}')
+        
     train, val, test = spk.train_test_split(
         data=matprojdata,
-        num_train=80000,
-        num_val=40000,
+        num_train=10000,
+        num_val=6000,
         split_file=os.path.join(outData, "split.npz"),)
+        
     train_loader = spk.AtomsLoader(train, batch_size=100, shuffle=True)
     val_loader = spk.AtomsLoader(val, batch_size=100)
     
     atomrefs = matprojdata.get_atomref(properMP)
 
     means, stddevs = train_loader.get_statistics(properMP, divide_by_atoms=True, single_atom_ref=atomrefs)
-    print('Mean For_energy/atom:', means[properMP])
-    print('Std. dev. For_energy/atom:', stddevs[properMP])
+    print(f'Mean For_energy/atom: {means[properMP]}')
+    print(f'Std. dev. For_energy/atom: {stddevs[properMP]}')
+    
     return atomrefs, test, means, stddevs, train_loader, val_loader
     
 #============ LOSS FUNCTION
@@ -54,15 +60,18 @@ def mse_loss(batch, result):
 
 #============ BUILDING THE MODEL 
 def schnet_model(atomrefs, means, stddevs, train_loader, val_loader):
+    n_features = 10
     schnet = spk.representation.SchNet(
-        n_atom_basis=30, 
-        n_filters=30, 
-        n_gaussians=20, 
-        n_interactions=5,
+        n_atom_basis=n_features, 
+        n_filters=n_features, 
+        n_gaussians=10, 
+        n_interactions=2,
         cutoff=4., 
         cutoff_network=spk.nn.cutoff.CosineCutoff)
-    output_U0=spk.atomistic.Atomwise(
-    n_in=30, 
+        
+    output_U0 = spk.atomistic.Atomwise(
+    n_in=n_features, 
+    n_layers = 2,
     atomref=atomrefs[properMP], 
     property=properMP, 
     mean=means[properMP], 
@@ -106,8 +115,7 @@ def result_plot():
     val_loss = results[:,3]
     val_mae = results[:,4]
     
-    print('Final validation MAE:', np.round(val_mae[-1], 2), 'eV =',
-        np.round(val_mae[-1] / (kcal/mol), 2), 'kcal/mol')
+    print(f'Final validation MAE: {np.round(val_mae[-1], 2)} eV = {np.round(val_mae[-1] / (kcal/mol), 2)} kcal/mol')
     
     plt.figure(figsize=(14,5))
     plt.subplot(1,2,1)
@@ -132,20 +140,19 @@ def model_pred(test):
     print(len(test_loader))
     for count, batch in enumerate(test_loader):
         batch = {k: v.to(device) for k, v in batch.items()}
-        # apply model
+        # APPLY MODEL
         pred = best_model(batch)
-        # calculate absolute error
+        # CALCULATE ABSOLUTE ERROR
         tmp = torch.sum(torch.abs(pred[properMP]-batch[properMP]))
-        tmp = tmp.detach().cpu().numpy() # detach from graph & convert to numpy
+        tmp = tmp.detach().cpu().numpy() # DETACH FROM GRAPH & CONVERT TO NUMPY
         err += tmp
     
-        # log progress
-        percent = '{:3.2f}'.format(count/len(test_loader)*100)
+        # LOG PROGRESS
+        percent = f'{count/len(test_loader)*100:3.2f}'
         print('Progress:', f'{percent}%' + ' '*(5-len(percent)), end="\r")
     
     err /= len(test)
-    print('Test MAE', np.round(err, 2), 'eV =',
-        np.round(err / (kcal/mol), 2), 'kcal/mol')
+    print(f'Test MAE {np.round(err, 2)} eV = {np.round(err/(kcal/mol), 2)} kcal/mol')
 			
 
 atomrefs, test, means, stddevs, train_loader, val_loader = data_loading()
