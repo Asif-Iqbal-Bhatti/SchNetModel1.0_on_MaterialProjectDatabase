@@ -9,8 +9,7 @@
 '''
 
 import os, sys, numpy as np, matplotlib.pyplot as plt
-import schnetpack as spk
-import schnetpack.train as trn
+import schnetpack as spk, schnetpack.train as trn
 import torch, torchmetrics
 import pytorch_lightning as pl
 from ase.units import kcal, mol
@@ -29,7 +28,7 @@ if not os.path.exists('outData'):
 
 #============ INITIALIZATION
 def data_loading():
-    key="***************"
+    key="np.NaN"
     matprojdata = MaterialsProject('matprojAI.db', apikey=key, download=False,)
     print(f'Total calculations: {len(matprojdata)}')
     print('Available properties:')
@@ -38,8 +37,8 @@ def data_loading():
         
     train, val, test = spk.train_test_split(
         data=matprojdata,
-        num_train=10000,
-        num_val=6000,
+        num_train=40000,
+        num_val=30000,
         split_file=os.path.join(outData, "split.npz"),)
         
     train_loader = spk.AtomsLoader(train, batch_size=100, shuffle=True)
@@ -60,12 +59,12 @@ def mse_loss(batch, result):
 
 #============ BUILDING THE MODEL 
 def schnet_model(atomrefs, means, stddevs, train_loader, val_loader):
-    n_features = 10
+    n_features = 20
     schnet = spk.representation.SchNet(
         n_atom_basis=n_features, 
         n_filters=n_features, 
         n_gaussians=10, 
-        n_interactions=2,
+        n_interactions=3,
         cutoff=4., 
         cutoff_network=spk.nn.cutoff.CosineCutoff)
         
@@ -84,11 +83,12 @@ def schnet_model(atomrefs, means, stddevs, train_loader, val_loader):
     loss = trn.build_mse_loss([properMP])
     
     metrics = [spk.metrics.MeanAbsoluteError(properMP)]
-    hooks = [
-        trn.CSVHook(log_path=outData, metrics=metrics),
-        trn.ReduceLROnPlateauHook(
+    hooks = [trn.CSVHook(log_path=outData, metrics=metrics),
+            trn.ReduceLROnPlateauHook(
             optimizer,
-            patience=5, factor=0.8, min_lr=1e-4,
+            patience=5, 
+            factor=0.8, 
+            min_lr=1e-4,
             stop_after_min=True)
     ]
 
@@ -102,7 +102,7 @@ def schnet_model(atomrefs, means, stddevs, train_loader, val_loader):
         validation_loader=val_loader,
     )
 
-    n_epochs = 5
+    n_epochs = 8
     trainer.train(device=device, n_epochs=n_epochs)
 
 #============ PLOTING A FUNCTION 
